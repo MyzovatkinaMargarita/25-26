@@ -5,6 +5,15 @@ import StudentHeader from "../../components/student/StudentHeader";
 import TestCard from "../../components/tests/TestCard";
 import { type Attempt, type TestItem } from "../../types/testing";
 
+/*============================================================================
+   Страница "Тестирования"
+   Линейный сценарий:
+   1) загрузить tests.json и attempts.json;
+   2) вычислить последние попытки текущего пользователя по testId;
+   3) отобразить только опубликованные тесты;
+   4) в карточку передать сам тест + последнюю попытку (если есть).
+  ==========================================================================*/
+
 const Grid = styled.div`
   display: grid;
   gap: 16px;
@@ -12,18 +21,30 @@ const Grid = styled.div`
   padding: 20px;
 `;
 
+// Заглушка для компонента фильтров (если он еще не создан в отдельном файле)
+const FiltersBar = ({ onChange }: { onChange: (f: any) => void }) => (
+  <div style={{ padding: "0 20px", marginBottom: "10px" }}>
+    {/* Здесь будет логика фильтров */}
+  </div>
+);
+
 type FiltersState = any;
 
 export default function StudentTestsPage() {
+  /*--------------------------- Состояния данных --------------------------- */
   const [tests, setTests] = useState<TestItem[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
+
+  /*--------------------------- Состояния UI ------------------------------- */
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  /*------------------------ Обработчик панели фильтров -------------------- */
   const handleFilters = (f: FiltersState) => {
-    console.log(f);
+    console.log("Выбраны фильтры:", f);
   };
 
+  /*------------------------------- Загрузка ------------------------------- */
   useEffect(() => {
     Promise.all([
       fetch("/data/tests.json"),
@@ -49,6 +70,8 @@ export default function StudentTestsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  /*---------------------- Производные вычисления -------------------------- */
+  // Индекс последней попытки по testId для пользователя с userId: 1
   const lastAttemptByTest = useMemo(() => {
     const byTest = new Map<number, Attempt>();
     const mine = attempts.filter((a) => a.userId === 1);
@@ -59,18 +82,37 @@ export default function StudentTestsPage() {
     return byTest;
   }, [attempts]);
 
-  if (loading) return <div>Загрузка...</div>;
-  if (error) return <div>{error}</div>;
+  /*-------------------------- Экраны состояний ---------------------------- */
+  if (loading) return (
+    <>
+      <StudentHeader title="Тестирования" />
+      <p style={{ padding: "20px" }}>Загрузка…</p>
+    </>
+  );
 
+  if (error) return (
+    <>
+      <StudentHeader title="Тестирования" />
+      <p style={{ color: "crimson", padding: "20px" }}>{error}</p>
+    </>
+  );
+
+  /*------------------------------ Фильтрация ------------------------------ */
+  // Показываем только тесты с флагом isPublished: true
+  const visible = tests.filter((t) => t.isPublished);
+
+  /*-------------------------------- Рендер -------------------------------- */
   return (
     <>
-      <StudentHeader title="Мои тесты" />
+      <StudentHeader title="Тестирования" />
+      <FiltersBar onChange={handleFilters} />
+      
       <Grid>
-        {tests.map((test) => (
+        {visible.map((t) => (
           <TestCard 
-            key={test.id} 
-            test={test} 
-            lastAttempt={lastAttemptByTest.get(test.id)} 
+            key={t.id} 
+            test={t} 
+            lastAttempt={lastAttemptByTest.get(t.id)} 
           />
         ))}
       </Grid>
