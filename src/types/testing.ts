@@ -6,7 +6,6 @@ export type Attempt = {
   userId: number;
   score: number;
   status: AttemptStatus;
-  // при необходимости здесь же позже появятся finishedAt/startedAt
 };
 
 export type TestMeta = {
